@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import * as htmlToImage from 'html-to-image';
+import LogoEmpresa from '../Logos/AMBULANCIA_CIRCULAR .png';
+import Imss from '../Logos/IMSS-Logo.png';
 import { X, Ambulance, User, Clipboard, MapPin, MapPinCheckInside, Users, NotepadText, Bold, Check, Copy, File} from 'lucide-react';
 
 
@@ -73,22 +75,30 @@ const AgregarEstado = ({ isOpen, onClose, darkMode, folioSugerido,
                 </button>
                 
                 {/*BARRA SUPERIOR*/}
-                <div className={`p-5 md:p-8 border-b transition-all duration-500 ${
+                <div className={`p-4 md:p-8 border-b transition-all duration-500 ${
                     darkMode 
                         ? 'bg-white border-gray-200'           
                         : 'bg-[#0f172a] border-gray-800/50'   
                 }`}>
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 md:pr-10">
+                    <div className="flex flex-col sm:flex-row justify-between items-start md:items-center gap-4 md:gap-6 w-full">
                         
-                        <div className="flex item-star md:items-center gap-4">
-                            <div className={`p-3 rounded-2xl flex-shrink-0${
-                                darkMode ? 'bg-slate-100' : 'bg-white/10'
-                            }`}>
-                                <Ambulance className={`w-6 h-6 md:w-8 h-8 ${
-                                    darkMode ? 'text-[#E95D62]/95' : 'text-blue-400'
-                                }`} />
+                        <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                            <div className="flex flex-shrink-0 items-center">
+                                <img
+                                    src={LogoEmpresa}
+                                    alt="Terapia Móvil"
+                                    className={`w-15 h-15 lg:w-20 h-20 object-contain ${
+                                        !darkMode ? 'invert brightness-0 invert' : '' 
+                                    }`}
+                                />
+                                <img
+                                    src={Imss}
+                                    alt="IMSS"
+                                    className={`w-18 h-18 lg:w-25 h-25 object-contain -ml-1 md:hidden ${
+                                        !darkMode ? 'invert brightness-0 invert' : ''}`}
+                                />
                             </div>
-
+                            
                             <div>
                                 <p className={`text-[9px] md:text-[10px] tracking-[0.2em] font-bold uppercase ${
                                     darkMode ? 'text-slate-400' : 'text-gray-500'
@@ -101,21 +111,21 @@ const AgregarEstado = ({ isOpen, onClose, darkMode, folioSugerido,
                                 }`}>
                                     Terapia Móvil
                                 </h1>
-                                
-                                <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 items-center text-[10px] font-mono">
+                                                                
+                                <div className="flex flex-wrap gap-x-3 md:gap-x-6 items-center text-[9px] font-mono mt-1">
                                     {/* Folio */}
                                     <div className="flex flex-col">
-                                        <span className="text-gray-500 font-bold uppercase text-[8px]">Folio</span>
+                                        <span className="text-gray-500 font-bold uppercase text-[7px]">Folio</span>
                                         <span className={`font-bold ${darkMode ? 'text-blue-600' : 'text-blue-400'}`}>
                                             {folioSugerido || 'SOL-0000'}
                                         </span>
                                     </div>
 
                                     {/* Separador visual si quieres uno */}
-                                    <div className={`h-4 w-[1px] hidden md:block ${darkMode ? 'bg-gray-200' : 'bg-gray-700'}`} />
+                                    <div className={`self-stretch w-[1px] my-1 hidden md:block ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`} />
 
-                                    <div className="flex flex-col border-l border-gray-700/30 pl-4 md:border-none md:pl-0">
-                                        <span className="text-gray-500 font-bold uppercase text-[8px]">Prioridad</span>
+                                    <div className="flex flex-col">
+                                        <span className="text-gray-500 font-bold uppercase text-[7px]">Prioridad</span>
                                         <span className={`font-bold uppercase ${
                                             darkMode ? 'text-slate-900' : 'text-white'
                                         }`}>
@@ -123,11 +133,11 @@ const AgregarEstado = ({ isOpen, onClose, darkMode, folioSugerido,
                                         </span>
                                     </div>
 
-                                    <div className={`h-4 w-[1px] hidden md:block ${darkMode ? 'bg-gray-200' : 'bg-gray-700'}`} />
+                                    <div className={`self-stretch w-[1px] my-1 hidden md:block ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`} />
 
                                     {/* Operador */}
-                                    <div className="flex flex-col w-full md:w-auto mt-2 md:mt-0 pt-2 border-t border-gray-700/20 md:border-none md:pt-0">
-                                        <span className="text-gray-500 font-bold uppercase text-[9px]">Operador</span>
+                                    <div className="flex flex-col">
+                                        <span className="text-gray-500 font-bold uppercase text-[8px]">Operador</span>
                                         <span className={`font-bold uppercase ${
                                             darkMode ? 'text-slate-700' : 'text-gray-400'
                                         }`}>
@@ -136,18 +146,29 @@ const AgregarEstado = ({ isOpen, onClose, darkMode, folioSugerido,
                                     </div>
                                 </div>
                             </div>
+
+                            <div className="hidden md:block flex-shrink-0 -ml-10 lg:-ml-25">
+                                <img
+                                    src={Imss}
+                                    alt="IMSS"
+                                    className={`w-18 h-18 lg:w-25 h-25 object-contain hidden md:block ${
+                                        !darkMode ? 'invert brightness-0 invert' : ''}`}
+                                />
+                            </div>
                         </div>
 
-                        {/*Fecha (Derecha) */}
-                        <div className={`w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 md:border-l md:pl-6 border-gray-500/20 text-left md:text-right`}>
-                            <p className="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                                Fecha de Emisión
-                            </p>
-                            <p className={`text-[11px] md:text-sm font-bold capitalize mt-1 ${
-                                darkMode ? 'text-slate-800' : 'text-white'
-                            }`}>
-                                {fechaActual} - {new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
-                            </p>
+                        {/*Fecha*/}
+                        <div className="w-full md:w-auto mt-0 pt-1 border-t border-dashed md:border-t-0 md:border-l md:pl-6 border-gray-500/20">
+                            <div className="flex md:flex-col justify-between items-center md:items-end">
+                                <p className="text-[7px] md:text-[10px] font-bold text-gray-500 uppercase">
+                                    Fecha de Emisión
+                                </p>
+                                <p className={`text-[9px] md:text-sm font-bold leading-none md:mt-1 ${
+                                    darkMode ? 'text-slate-800' : 'text-white'
+                                }`}>
+                                    {fechaActual} - {new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -155,7 +176,7 @@ const AgregarEstado = ({ isOpen, onClose, darkMode, folioSugerido,
                 <div className="flex flex-col flex-1 overflow-y-auto">  
                 {/* CUERPO DE LA FICHA */}
                 {/* CUERPO DE LA FICHA - SECCIÓN PACIENTE */}
-                <div className="p-4 md:p-10 space-y-4 md:space-y-6">
+                <div className="p-2 md:p-10 space-y-4 md:space-y-6">
                                                     
                         {/* GRUPO: DATOS DEL PACIENTE */}
                         <section className={`p-4 md:p-6 rounded-2xl border transition-all ${
@@ -480,13 +501,28 @@ const AgregarEstado = ({ isOpen, onClose, darkMode, folioSugerido,
                     
                     {/*Cabecera*/}
                     <div className="flex items-center justify-between border-b pb-6 mb-6">
-                        <div className="flex item-center gap-6">
-                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                                <Ambulance className= "w-8 h-8 text-[#003969]/95" />
+                        <div className="flex items-center gap-4">
+                            <div className="flex flex-shrink-0 items-center">
+                               <img
+                                    src={LogoEmpresa}
+                                    alt="Terapia Móvil"
+                                    className={`w-15 h-15 lg:w-20 h-20 object-contain ${
+                                        !darkMode ? 'invert brightness-0 invert' : '' 
+                                    }`}
+                                />
+                            </div>
+                            <div className="flex flex-shrink-0 items-center">
+                                <img
+                                    src={Imss}
+                                    alt="IMSS"
+                                    className={`w-18 h-18 lg:w-25 h-25 object-contain -ml-1 ${
+                                        !darkMode ? 'invert brightness-0 invert' : ''}`}
+                                />
                             </div>
                             <h1 className="text-3xl font-black tracking-tight text-slate-900">
                                 Terapia Móvil
                             </h1>
+                            
                         </div>
 
                         <div className="text-right border-r-4 border-[#6AB534] pr-6">

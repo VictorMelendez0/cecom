@@ -55,6 +55,10 @@ const NavItem = ({ icon: Icon, label, color, darkMode, onClick }) => {
 const FoliosImss = () => {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const savedTheme = localStorage.getItem('app-theme');
+    if (savedTheme === 'dark') return true;
+    if (savedTheme === 'light') return false;
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
   
@@ -64,7 +68,11 @@ const FoliosImss = () => {
   const [cargando, setCargando] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [serviciosHoy, setServiciosHoy] = useState([]);
-  const toggleTheme = () => setDarkMode(!darkMode);
+  const setTheme = (isDark) => {
+    localStorage.setItem('app-theme', isDark ? 'dark' : 'light');
+    setDarkMode(isDark);
+  };
+  const toggleTheme = () => setTheme(!darkMode);
   const [mostrarRecursos, setMostrarRecursos] = useState(false);
   const [listaSolicitantes, setListaSolicitantes] = useState([]);
   const [datosSolicitante, setDatosSolicitante] = useState({ nombre: '', telefono: '', id: ''});
@@ -280,8 +288,8 @@ const FoliosImss = () => {
         if (!db || !db.servicios_imss) return [];
 
         // 1. Obtenemos la fecha de hoy en un formato estándar (DD/MM/YYYY)
-        // Usamos 'en-GB' para asegurar el formato día/mes/año sin partes de texto
-        const hoyCorta = new Date().toLocaleDateString('en-GB'); 
+       
+        const hoyCorta = new Date().toLocaleDateString('es-MX'); 
 
         return db.servicios_imss.filter(servicio => {
             if (!servicio.fecha) return false;
@@ -291,14 +299,14 @@ const FoliosImss = () => {
             try {
                 const d = new Date(servicio.fecha);
                 
-                fechaServicioNormalizada = !isNaN(d) ? d.toLocaleDateString('en-GB') : servicio.fecha;
+                fechaServicioNormalizada = !isNaN(d) ? d.toLocaleDateString('es-MX') : servicio.fecha;
             } catch {
                 fechaServicioNormalizada = servicio.fecha;
             }
 
             const hoy = new Date();
             const opcionesLargas = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-            const hoyTextoLargo = hoy.toLocaleDateString('es-ES', opcionesLargas);
+            const hoyTextoLargo = hoy.toLocaleDateString('es-MX', opcionesLargas);
 
             return (
                 fechaServicioNormalizada === hoyCorta || 
@@ -374,10 +382,6 @@ const FoliosImss = () => {
 }, [lugarDestino, catalogoHospital]);
   
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');    
-    const handleChange = (e) => setDarkMode(e.matches);
-    mediaQuery.addEventListener('change', handleChange);
-
     const timer = setInterval(() => {
       setHora(new Date().toLocaleTimeString());
     }, 1000);
@@ -415,9 +419,7 @@ const FoliosImss = () => {
         refrescarDatos();
     }, 20000); 
 
- 
     return () => {
-      mediaQuery.removeEventListener('change', handleChange);
       clearInterval(timer);
       clearInterval(intervalo);
     };

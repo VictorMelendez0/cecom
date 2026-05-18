@@ -6,9 +6,11 @@ import { Ambulance, Activity, AlertTriangle, LogOut, ChartNoAxesCombined, Settin
 import { useNavigate } from 'react-router-dom';
 import AgregarSolicitante from '../FoliosImss/Agregar_Sol';
 import AgregarEstado from '../FoliosImss/Agrgar_Estado';
-import CardSeguimiento from '../FoliosImss/CardSeguimiento';
+import CardSeguimientoPriv from './CardSeguimientoPriv';
 import AsignarUnidad from '../FoliosImss/AsignarUnidad';
 import Seguimiento from '../FoliosImss/Seguimiento';
+import CargarCotizaciones from './CargarCotcizaciones';
+import AsignarUnidadPriv from './AsignarUnidadPriv';
 
 const ESTADOS_MAPA = {
   'EN_SERVICIO': { label: 'Activo', color: 'text-green-400 dark:text-emerald-500', bg: 'bg-emerald-500', pulse: 'animate-pulse' },
@@ -57,6 +59,10 @@ const NavItem = ({ icon: Icon, label, color, darkMode, onClick }) => {
 const MainPrivados = () => {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const savedTheme = localStorage.getItem('app-theme');
+    if (savedTheme === 'dark') return true;
+    if (savedTheme === 'light') return false;
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
   
@@ -66,11 +72,18 @@ const MainPrivados = () => {
   const [cargando, setCargando] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [serviciosHoy, setServiciosHoy] = useState([]);
-  const toggleTheme = () => setDarkMode(!darkMode);
+  const setTheme = (isDark) => {
+    localStorage.setItem('app-theme', isDark ? 'dark' : 'light');
+    setDarkMode(isDark);
+  };
+  const toggleTheme = () => setTheme(!darkMode);
   const [mostrarRecursos, setMostrarRecursos] = useState(false);
   const [listaSolicitantes, setListaSolicitantes] = useState([]);
   const [SolicitanteNombre, setSolicitanteNombre] = useState('');
   const [contactoSolicitante, setContactoSolicitante] = useState('');
+  const [Diagnostico, setDiagnostico] = useState('');
+  const [traslado, setTraslado] = useState('');
+  const [tipoServicio, setTipoServicio] = useState('');
   const [PrecioBase, setPrecioBase] = useState('');
   const [tiempoEspera, setTiempoEspera] = useState('');
   const [costoHora, setCostoHora] = useState('');
@@ -86,19 +99,17 @@ const MainPrivados = () => {
   const [datosInlcuye, setDatosIncluye] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [Cancelacion, setCancelacion] = useState('');
+  const [cotisacionTotal, setCotisacionTotal] = useState('');
 
   const [fechaNacimiento, setFechaNacimiento] = useState('');
   const [edadPaciente, setEdadPaciente] = useState('');
   const [listaServicios, setListaServicios] = useState([]);
-  const [tipoServicio, setTipoServicio] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEstadoOpen, setIsEstadoOpen] = useState(false);
   const [prioridadSelec, setPrioridadSelect] = useState('');
   const [nombre, setNombre] = useState('');
   const [numeross, setNumeroSs] =useState('');
   const [CamaHab, setCamaHab] = useState('');
-  const [Diagnostico, setDiagnostico] = useState('');
-  const [traslado, setTraslado] = useState('');
   const [aceptacion, setAceptacion] = useState('');
   const [lugarOrigen, setLugarOrigen] = useState('');
   const [lugarDestino, setLugarDestino] = useState('');
@@ -133,52 +144,181 @@ const MainPrivados = () => {
   const IdUsuario = localStorage.getItem('user_id') || 'Usuario Invitado'
 
   const formatearMoneda = (valor) => {
-        if (!valor) return '';
-        // Quitamos cualquier caracter que no sea número o punto por seguridad
-        const numero = parseFloat(valor.toString().replace(/[^\d.]/g, ''));
+        if (valor === null || valor === undefined || valor === '') return '';
+        
+        const limpio= valor.toString().replace(/[^\d.]/g, '');
+        const numero = parseFloat(limpio);
+
         if (isNaN(numero)) return '';
         
         return new Intl.NumberFormat('es-MX', {
             style: 'currency',
             currency: 'MXN',
-            minimumFractionDigits: 0, // Cambia a 2 si quieres centavos ($1,200.00)
+            minimumFractionDigits: 0, 
             maximumFractionDigits: 0,
         }).format(numero);
     };
 
   const calculadoraPrecios = () => {
-    const km = parseFloat(distancia) || 0;
-    const costo = parseFloat(costoKm.replace(/[^\d.]/g, '')) || 0; 
-    if (costo<10){
+    // Convertimos a número de forma segura eliminando basura de texto
+    const kmStr = distancia ? distancia.toString().replace(/[^\d.]/g, '') : "0";
+    const costoStr = costoKm ? costoKm.toString().replace(/[^\d.]/g, '') : "0";
+    
+    const km = parseFloat(kmStr) || 0;
+    const costo = parseFloat(costoStr) || 0; 
+
+    if (km > 0 && km < 10) {
         setPrecioDistancia("Traslado contemplado como local");
-    }else{
+    } else if (km >= 10) {
         const total = km * costo;
         setPrecioDistancia(formatearMoneda(total));
+    } else {
+        setPrecioDistancia("");
     }
   };
 
-  const limpiarCampos = () => {
-        // Apartado Activación
-        setNombreReceptor("");
-        setContactoRecept("");
-        setAceptacion("");
+  const calculadoraTotal = () => {
+    const extraerNumero = (v) => parseFloat(v?.toString().replace(/[^\d.]/g, '')) || 0;
+
+    const Dis = extraerNumero(precioDistancia);
+    const Bas = extraerNumero(PrecioBase);
+    const Hon = extraerNumero(costoHonorario);
+
+    const subTot = Dis + Bas + Hon;
+    
+    
+    if (subTot === 0) {
+        setCotisacionTotal('');
+        return;
+    }
+
+    const TotalDef = Math.ceil(subTot / 100) * 100;
+    setCotisacionTotal(formatearMoneda(TotalDef));
+};
+
+   const limpiarFormulario = async() =>{
+        setSolicitanteNombre('');
+        setContactoSolicitante('');
+        setDiagnostico('');
+        setTraslado('');
+        setServicioSeleccionado('');
+        setPrecioBase('');
+        setTiempoEspera('');
+        setCostoHora('');
+        setCostoKm('');
+        setDatosIncluye('');
+        setPuntoOrigen('');
+        setPuntoDestino('');
+        setDistancia('');
+        setPrecioDistancia('');
+        setHonorario('');
+        setCostoHonorario('');
+        setRequisitosEspeciales('');
+        setDatosIncluye('');
+        setObservaciones('');
+        setCancelacion('');
+        setCotisacionTotal('');
+    
+        alert("Formulario Limpio")
+   };
+
+   const GuardarCotizacion = async () =>{
+        const URL_API = "https://script.google.com/macros/s/AKfycbyvS9cxB5kjuZ3VO3EplAA3xTMJmZS2vj1O5GQzaS0seRKr4L7OiLEyRn14-y66A1CF/exec";
+        const idunico = `COT-${Math.random().toString(16).slice(2, 10).toUpperCase()}`;
+        const ahora = new Date();
+        const opcionesHora = { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit', 
+        hour12: false 
+        };
+
+            // Construimos la cadena: "16/4/2026 19:40:51"
+            const fechaCorta = ahora.toLocaleDateString('es-MX'); // 16/4/2026
+            const hora24 = ahora.toLocaleTimeString('es-MX', opcionesHora); // 19:40:51
+    
+            const fechaHoraUnificada = `${fechaCorta} ${hora24}`;
         
-        // Apartado Paciente
-        setNombre("");
-        setFechaNacimiento("");
-        setEdadPaciente("");
-        setNumeroSs("");
-        setCamaHab("");
-        setDiagnostico("");
-        setNotaPac("");
-        
-        // Apartado Servicio
-        setLugarOrigen("");
-        setLugarDestino("");
-        setTipoServicio("");
-        setTraslado("");
-        setPrioridadSelect("");
-    };
+        const RegistroDatos = {
+            targetSheet: "OPS_PRIVADOS_COTIZACIONES",
+            "id_cotizacion": idunico,
+            "folio_cotizacion": folioSugerido,
+            "fecha": new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+            "solicitante_nombre": SolicitanteNombre,
+            "contacto_numero": contactoSolicitante,
+            "paciente_diagnostico": Diagnostico,
+            "tipo_traslado": traslado,
+            "tipo_servicio": tipoServicio,
+            "precio_base":  PrecioBase,
+            "tiempo_cortesia": tiempoEspera,
+            "costo_hora": costoHora,
+            "origen": puntoOrigen,
+            "destino": puntoDestino,
+            "km_totales": distancia,
+            "costo_km": costoKm,
+            "total_km": precioDistancia,
+            "honorarios": honorario,
+            "costo_honorarios": costoHonorario,
+            "requisitos": requisitosEspeciales,
+            "incluye": datosInlcuye,
+            "observaciones": observaciones,
+            "total_cotizado": cotisacionTotal,
+            "estatus_cotizacion": "COT",
+            "created_at": fechaHoraUnificada,
+            "created_by_id": IdUsuario,
+            "created_by_nombre": usuarioLogueado,
+            "updated_at": fechaHoraUnificada,
+            "updated_by_id": IdUsuario,
+            "updated_by_nombre": usuarioLogueado            
+        }
+
+        try {
+            await fetch(URL_API, {
+                method: 'POST',
+                mode: 'no-cors', // Google Apps Script suele requerir esto si no hay proxy
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(RegistroDatos)
+            });
+
+            alert("Cotización guardada y formulario limpio.");
+            limpiarFormulario();
+            setTimeout(() => {
+            refrescarDatos();
+        }, 500);
+
+        } catch (error) {
+            console.error("Error de red:", error);
+            alert("Error al intentar conectar con el servidor.");
+        }
+
+   }
+
+   const CargarRegistro = (cotizacion) => {
+        // Seteamos los estados individuales con los datos de la cotización
+        setSolicitanteNombre(cotizacion.solicitante_nombre || '');
+        setContactoSolicitante(cotizacion.contacto_numero || '');
+        setDiagnostico(cotizacion.paciente_diagnostico || '');
+        setTraslado(cotizacion.tipo_traslado || '');
+        setTipoServicio(cotizacion.tipo_servicio || '');
+        setPrecioBase(formatearMoneda(cotizacion.precio_base || 0));
+        setTiempoEspera(cotizacion.tiempo_cortesia || '');
+        setCostoHora(formatearMoneda(cotizacion.costo_hora || 0));
+        setPuntoOrigen(cotizacion.origen || '');
+        setPuntoDestino(cotizacion.destino || '');
+        setDistancia(cotizacion.km_totales || '');
+        setCostoKm(formatearMoneda(cotizacion.costo_km || 0));
+        setPrecioDistancia(formatearMoneda(cotizacion.total_km || 0));
+        setHonorario(cotizacion.honorarios || '');
+        setCostoHonorario(formatearMoneda(cotizacion.costo_honorarios || 0));
+        setRequisitosEspeciales(cotizacion.requisitos || '');
+        setDatosIncluye(cotizacion.incluye || '');
+        setObservaciones(cotizacion.observaciones || '');
+        setCotisacionTotal(formatearMoneda(cotizacion.total_cotizado || 0));
+
+        // Cerramos el modal
+        setIsModalOpen(false);
+   };
+
 
    const handleEnviarRegistro = async () => {
         const URL_API = "https://script.google.com/macros/s/AKfycbyvS9cxB5kjuZ3VO3EplAA3xTMJmZS2vj1O5GQzaS0seRKr4L7OiLEyRn14-y66A1CF/exec";
@@ -404,14 +544,10 @@ const MainPrivados = () => {
 }, [lugarDestino, catalogoHospital]);
   
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');    
-    const handleChange = (e) => setDarkMode(e.matches);
-    mediaQuery.addEventListener('change', handleChange);
-
     const timer = setInterval(() => {
       setHora(new Date().toLocaleTimeString());
     }, 1000);
-
+    
 
     const URL_API = "https://script.google.com/macros/s/AKfycbyvS9cxB5kjuZ3VO3EplAA3xTMJmZS2vj1O5GQzaS0seRKr4L7OiLEyRn14-y66A1CF/exec";
     fetch(URL_API)
@@ -445,17 +581,18 @@ const MainPrivados = () => {
         refrescarDatos();
     }, 20000); 
 
- 
+    calculadoraPrecios();
+    calculadoraTotal();
+
     return () => {
-      mediaQuery.removeEventListener('change', handleChange);
       clearInterval(timer);
       clearInterval(intervalo);
     };
 
-  }, [refrescarDatos]);
+  }, [refrescarDatos, distancia, costoKm, precioDistancia, PrecioBase, costoHonorario]);
 
   return (
-    <div className={`flex min-h-screen transition-colors duration-500 ${darkMode ? 'bg-[#050a18] text-white' : 'bg-white text-gray-900'}`}>
+    <div className={`flex min-h-screen transition-colors duration-500 ${darkMode ? 'dark bg-[#050a18] text-white' : 'bg-white text-gray-900'}`}>
       
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
@@ -470,7 +607,7 @@ const MainPrivados = () => {
             <div className="p-6 pb-2">
                 <div className="flex items-center justify-between mb-4">
                     <h1 className={`text-xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>CECOM OS</h1>
-                    <button onClick={() => setSidebarOpen(false)} className='lg:hidden p-2 text-gray-500'>
+                    <button onClick={() => setSidebarOpen(false)} className='lg:hidden p-2 text-gray-600'>
                     <X className="w-6 h-6" />
                     </button>
                 </div>
@@ -479,7 +616,7 @@ const MainPrivados = () => {
             <nav className="flex-1 overflow-y-auto px-6 py-2 space-y-1">
                 <p className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-2">Principal</p>
                 <button className={`flex items-center gap-3 w-full p-2.5 rounded-xl transition-all duration-300 group cursor-pointer
-                    ${darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                    ${darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                     onClick={() => handleNavigation('/dashboard')}>
                     <ChartNoAxesCombined className="w-5 h-5" color="#00D6C1" />
                     <span className="text-sm">Panel de Control</span>
@@ -510,7 +647,7 @@ const MainPrivados = () => {
                     <p className="text-[9px] opacity-70 uppercase mt-0.5">{fecha}</p>
                     </div>
                 </div>
-                <button onClick={() => window.location.href = '/'} className="flex items-center gap-3 w-full p-2.5 rounded-xl text-gray-500 hover:text-[#EC6F7C] hover:bg-[#EC6F7C]/10 transition-all cursor-pointer">
+                <button onClick={() => window.location.href = '/'} className="flex items-center gap-3 w-full p-2.5 rounded-xl text-gray-600 hover:text-[#EC6F7C] hover:bg-[#EC6F7C]/10 transition-all cursor-pointer">
                     <LogOut className="w-4 h-4" /> 
                     <span className="text-sm font-medium">Cerrar Sesión</span>
                 </button>
@@ -531,7 +668,7 @@ const MainPrivados = () => {
 
                     <div className="min-w-0">
                     <h2 className={`text-xl md:text-3xl font-bold truncate ${darkMode ? 'text-white' : 'text-gray-950'}`}>Servicios Privados</h2>
-                    <p className="text-gray-400 text-xs md:tex-sm hidden sm:block">Particulares y Convenios directos</p>
+                    <p className="text-gray-500 text-xs md:tex-sm hidden sm:block">Particulares y Convenios directos</p>
                     </div>  
                 </div>
 
@@ -562,7 +699,7 @@ const MainPrivados = () => {
                     : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]'}`} 
                     />
                     <div className="min-w-0">
-                        <p className="text-gray-400 text-sm">Módulo de Servicios Privados</p>
+                        <p className="text-gray-500 text-sm">Módulo de Servicios Privados</p>
                     </div>
                 </div>
 
@@ -713,21 +850,28 @@ const MainPrivados = () => {
                                                 onChange={(e) => {
                                                     const nombreSeleccionado = e.target.value;
                                                     setTipoServicio(nombreSeleccionado);
-                                                    
-                                                    // Buscamos el objeto completo en la lista original para extraer su ID
-                                                    const servicioEncontrado = listaServicios.find(item => item.nombre_servicio === nombreSeleccionado);
-                                                    if (servicioEncontrado) {
-                                                        setIdServicio(servicioEncontrado.id_servicio); // Asegúrate de tener este estado definido
-                                                        const PrecBase = formatearMoneda(servicioEncontrado.costo_base_servicio || 0);
-                                                        setPrecioBase(PrecBase); // Si el servicio tiene un precio base, lo asignamos
-                                                        setTiempoEspera(servicioEncontrado.tiempo_espera_servicio || '');
-                                                        const costoHora = formatearMoneda(servicioEncontrado.costo_tiempo_espera_servicio || 0);
-                                                        setCostoHora(costoHora);
-                                                        const costoKm = formatearMoneda(servicioEncontrado.costo_por_km_servicio || 0);
-                                                        setCostoKm(costoKm);
-                                                        setDatosIncluye(servicioEncontrado.que_incluye || '');
 
+                                                    if (!nombreSeleccionado || nombreSeleccionado === "") {
+                                                        setIdServicio('');
+                                                        setPrecioBase('');
+                                                        setTiempoEspera('');
+                                                        setCostoHora('');
+                                                        setCostoKm('');
+                                                        setDatosIncluye('');
+                                                        return; 
                                                     }
+                                                
+                                                    const servicioEncontrado = listaServicios.find(item => item.nombre_servicio === nombreSeleccionado);
+
+                                                    if (servicioEncontrado) {
+                                                        
+                                                        setIdServicio(servicioEncontrado.id_servicio); 
+                                                        setPrecioBase(formatearMoneda(servicioEncontrado.costo_base_servicio || 0));
+                                                        setTiempoEspera(servicioEncontrado.tiempo_espera_servicio || '');
+                                                        setCostoHora(formatearMoneda(servicioEncontrado.costo_tiempo_espera_servicio || 0));
+                                                        setCostoKm(formatearMoneda(servicioEncontrado.costo_por_km_servicio || 0));
+                                                        setDatosIncluye(servicioEncontrado.que_incluye || '');
+                                                    }                                                    
                                                 }}
                                                 className={`px-2 py-1.5 text-xs rounded-md border outline-none cursor-pointer transition-all ${
                                                 darkMode ? 'bg-[#1f2937]/50 border-gray-700 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-600'
@@ -838,12 +982,16 @@ const MainPrivados = () => {
                                                     const honorarioSeleccionado = e.target.value;
                                                     setHonorario(honorarioSeleccionado);
 
+                                                    if (!honorarioSeleccionado || honorarioSeleccionado === ""){
+                                                        setCostoHonorario('');
+                                                        return;
+                                                    }
                                                     
                                                     const tipoHonorario = listaServicios.find(item => item.nombre_servicio === honorarioSeleccionado);
+
                                                     if (tipoHonorario) {
                                                         setIdServicio(tipoHonorario.id_servicio); 
-                                                        const precioH = formatearMoneda(tipoHonorario.costo_base_servicio || 0);
-                                                        setCostoHonorario(precioH); 
+                                                        setCostoHonorario(formatearMoneda(tipoHonorario.costo_base_servicio || 0)); 
                                                     }
                                                 }}
                                                 className={`px-2 py-1.5 text-xs rounded-md border outline-none cursor-pointer transition-all ${
@@ -927,13 +1075,19 @@ const MainPrivados = () => {
                                             </label>
                                             <textarea
                                                 rows={6}
-                                                value={observaciones || ''}
-                                                onChange={(e) => setObservaciones(e.target.value)}
+                                                value={Cancelacion || ''}
+                                                onChange={(e) => setCancelacion(e.target.value)}
                                                 placeholder="Condicones de cancelacion de acuerdo a la distancia"
                                                 className={`px-2 py-1  text-xs rounded-md border outline-none ${
                                                     darkMode ? 'bg-[#1f2937]/50 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
                                                 }`}
                                             />                                
+                                        </div>
+                                        <div className="flex flex-col gap1 col-span-2">
+                                            <label className={`text-[10px] font-medium uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                                Resumen del servicio
+                                            </label>
+                                            <h1 className={`font-medium uppercase tracking-wider ${darkMode ? 'text-gray-100' : 'text-gray-500'}`} >Total: {cotisacionTotal} </h1>                              
                                         </div>
                                     </div>
                                 </div>
@@ -1020,7 +1174,7 @@ const MainPrivados = () => {
                                             <input
                                                 value={distancia || ''}
                                                 onChange={(e) => setDistancia(e.target.value)}
-                                                placeholder="Ej. 42 Km"
+                                                placeholder="0.00"
                                                 className={`px-2 py-1.5 text-xs rounded-md border outline-none ${
                                                     darkMode ? 'bg-[#1f2937]/50 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
                                                 }`}
@@ -1033,7 +1187,7 @@ const MainPrivados = () => {
                                             <input
                                                 value={costoKm || ''}
                                                 onChange={(e) => setCostoKm(e.target.value)}
-                                                placeholder="Ej. 10 $/Km"
+                                                placeholder="$0.00"
                                                 className={`px-2 py-1.5 text-xs rounded-md border outline-none ${
                                                     darkMode ? 'bg-[#1f2937]/50 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
                                                 }`}
@@ -1045,10 +1199,7 @@ const MainPrivados = () => {
                                             </label>
                                             <input
                                                 value={precioDistancia || ''}
-                                                onChange={(e) => {
-                                                    setPrecioDistancia(e.target.value)
-                                                    calculadoraPrecios();}}
-                                                onBlur={calculadoraPrecios}
+                                                onChange={(e) => setPrecioDistancia(e.target.value)}
                                                 placeholder="$0.00"
                                                 className={`px-2 py-1.5 text-xs rounded-md border outline-none ${
                                                     darkMode ? 'bg-[#1f2937]/50 border-gray-700 text-white font-bold' : 'bg-gray-50 border-gray-200 text-gray-900 font-bold'
@@ -1066,6 +1217,51 @@ const MainPrivados = () => {
                                         )}                          
                                     </div>
                                 </div>
+
+                                <div className="flex items-center gap-3 w-full mt-6">
+                                    <button 
+                                        onClick={() => limpiarFormulario(true)} 
+                                        className={`w-fit sm:flex-none px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wide transition-all duration-300 cursor-pointer border
+                                            ${darkMode 
+                                                ? 'bg-[#CDD6E9]-500/10 border-[#CDD6E9]-500/20 text-[#CDD6E9]-400 hover:bg-[#CDD6E9]/15' 
+                                                : 'bg-blue-50 border-blue-500 text-blue-700 hover:bg-blue-100'
+                                            }`}
+                                    >
+                                        Limpiar Formulario
+                                    </button>
+                                    <button 
+                                        onClick={() => GuardarCotizacion(true)} 
+                                        className={`w-fit sm:flex-none px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wide transition-all duration-300 cursor-pointer border
+                                            ${darkMode 
+                                                ? 'bg-[#CDD6E9]-500/10 border-[#CDD6E9]-500/20 text-[#CDD6E9]-400 hover:bg-[#CDD6E9]/15' 
+                                                : 'bg-blue-50 border-blue-500 text-blue-700 hover:bg-blue-100'
+                                            }`}
+                                    >
+                                        Guardar Cotización
+                                    </button>  
+                                    <button 
+                                        onClick={() => setIsModalOpen(true)} 
+                                        className={`w-fit sm:flex-none px-3 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wide transition-all duration-300 cursor-pointer border
+                                            ${darkMode 
+                                                ? 'bg-[#CDD6E9]-500/10 border-[#CDD6E9]-500/20 text-[#CDD6E9]-400 hover:bg-[#CDD6E9]/15' 
+                                                : 'bg-blue-50 border-blue-500 text-blue-700 hover:bg-blue-100'
+                                            }`}
+                                    >
+                                        Cargar
+                                    </button>
+
+                                    
+                                    <button 
+                                        onClick={() => setIsEstadoOpen(true)} 
+                                        className={`ml-auto sm:flex-none px-8 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wide transition-all duration-300 cursor-pointer border
+                                            ${darkMode 
+                                                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400 hover:bg-emerald-800/40' 
+                                                : 'bg-emerald-50 border-emerald-500 text-emerald-700 hover:bg-emerald-100'
+                                            }`}
+                                    >
+                                        Registrar Folio
+                                    </button>        
+                                </div>
                             </div>         
                         </div>
                     </div>
@@ -1077,19 +1273,19 @@ const MainPrivados = () => {
                 }`}>
                     <h4 className={`text-lg font-bold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Folios en Seguimiento</h4>
                     <div className="flex flex-wrap gap-4">
-                    {db?.servicios_imss && db.servicios_imss.filter(s => String(s.finalizado).toUpperCase() !== 'TRUE').length > 0 ? (
-                        db.servicios_imss
+                    {db?.servicios_privados && db.servicios_privados.filter(s => String(s.finalizado).toUpperCase() !== 'TRUE').length > 0 ? (
+                        db.servicios_privados
                             .filter(s => String(s.finalizado).toUpperCase() !== 'TRUE')
                             .map((servicio) => (
-                                <CardSeguimiento 
-                                    key={servicio.id_imss} 
+                                <CardSeguimientoPriv 
+                                    key={servicio.id_privado} 
                                     servicio={servicio} 
                                     darkMode={darkMode} 
                                     onPress={(s, tipo) => abrirModalSeguimiento(s,tipo)}
                                 />
                             ))
                     ) : (
-                        <p className="text-gray-400 italic text-sm p-4">
+                        <p className="text-gray-500 italic text-sm p-4">
                             {cargando ? "Cargando servicios..." : "Sin unidades activas en turno"}
                         </p>
                     )}
@@ -1107,14 +1303,14 @@ const MainPrivados = () => {
                     <div className="flex justify-between items-center mb-6">
                       <div>
                         <h4 className={`text-lg font-bold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Servicios del Día</h4>
-                        <p className="text-gray-500 text-xs">Resumen operativo de los servicios registrados</p>
+                        <p className="text-gray-600 text-xs">Resumen operativo de los servicios registrados</p>
                       </div>
                     </div>
                 
                     <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                         <table className="w-full text-left border-collapse min-w-[600px]"> 
                         <thead>
-                            <tr className="text-gray-500 text-[10px] uppercase tracking-widest border-b border-gray-800">
+                            <tr className="text-gray-600 text-[10px] uppercase tracking-widest border-b border-gray-800">
                             <th className="pb-4 font-bold px-2">Folio</th>
                             <th className="pb-4 font-bold px-2">Paciente</th>
                             <th className="pb-4 font-bold px-2">Origen / Destino</th>
@@ -1137,7 +1333,7 @@ const MainPrivados = () => {
                                         <td className="py-4 px-2">
                                             <div className="flex items-center gap-2">
                                                 <span className="truncate max-w-[120px]">{item.hospital_origen}</span>
-                                                <MoveRight className="w-3 h-3 text-gray-500" />
+                                                <MoveRight className="w-3 h-3 text-gray-600" />
                                                 <span className="truncate max-w-[120px]">{item.hospital_destino}</span>
                                             </div>
                                         </td>
@@ -1163,7 +1359,7 @@ const MainPrivados = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="6" className="py-10 text-center text-gray-500 italic">
+                                    <td colSpan="6" className="py-10 text-center text-gray-600 italic">
                                         No se han registrado servicios el día de hoy.
                                     </td>
                                 </tr>
@@ -1174,6 +1370,22 @@ const MainPrivados = () => {
                 </div>
             </div>
         </main>
+        <CargarCotizaciones 
+            isOpen={isModalOpen} 
+            onClose={() => setIsModalOpen(false)} 
+            darkMode={darkMode}
+            listaCotizaciones={db?.privadosCot || []}
+            onSelect={CargarRegistro}/>
+
+        <AsignarUnidadPriv
+            isOpen={isEstadoOpen}
+            onClose={() => setIsEstadoOpen(false)} 
+            darkMode={darkMode}
+            servicio={servicioSeleccionado}
+            listaAsignaciones={db?.asignaciones || []}
+            listaPersonal={db?.personal || []}
+            listaExtra={db?.extra || []}
+        />
     </div>
   );
 };

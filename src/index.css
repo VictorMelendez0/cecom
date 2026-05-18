@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+/* Refuerza la legibilidad del texto gris en modo claro */
+:not(.dark) .text-gray-500 {
+  color: #4b5563 !important;
+}
+
+:not(.dark) .text-gray-400 {
+  color: #6b7280 !important;
+}

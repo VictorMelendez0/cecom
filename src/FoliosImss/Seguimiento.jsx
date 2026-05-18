@@ -85,6 +85,7 @@ const limpiarHoraSheets = (hora) => {
   const [inicioTraslado, setInicioTraslado] = useState(formatearParaInputTime(servicio.h_inicio));
   const [llegadaDestino, setLlegadaDestino] = useState(formatearParaInputTime(servicio.h_destino));
   const [finServicio, setFinServicio] = useState(formatearParaInputTime(servicio.h_final));
+  const [llegadaBase, setLlegadaBase] = useState (formatearParaInputTime(servicio.h_llegada));
   const [nota, setNota] = useState(servicio.paciente_nota || '');
   const [confirmandoCancelacion, setConfirmandoCancelacion] = useState(false);
   const [confirmandoFinalizacion, setConfirmandoFinalizacion] = useState(false);
@@ -324,6 +325,7 @@ const limpiarHoraSheets = (hora) => {
             "h_origen": llegadaOrigen || ' ',
             "h_inicio": inicioTraslado || ' ',
             "h_destino": llegadaDestino || ' ',
+            "h_llegada": llegadaBase || ' ',
             "h_final": finServicio || ' ',
             // Valores dinámicos calculados arriba
             "estatus_clave": nuevoEstatusClave,
@@ -339,7 +341,7 @@ const limpiarHoraSheets = (hora) => {
         };
 
         let accionBitacora = "REGISTRO DE TIEMPOS";
-        let comentarioBitacora = `Se actualizaron los tiempos del servicio: Origen(${llegadaOrigen}), Traslado(${inicioTraslado}), Destino(${llegadaDestino}), Fin(${finServicio})`;
+        let comentarioBitacora = `Se actualizaron los tiempos del servicio: Origen(${llegadaOrigen}), Traslado(${inicioTraslado}), Destino(${llegadaDestino}), Fin(${finServicio}), Base(${llegadaBase})`;
 
         // Si el usuario está en el modo "Modificar", cambiamos el mensaje
         if (isModifying) {
@@ -391,6 +393,7 @@ const limpiarHoraSheets = (hora) => {
                     h_inicio: inicioTraslado,
                     h_destino: llegadaDestino,
                     h_final: finServicio,
+                    h_llegada: llegadaBase,
                     estatus_clave: nuevoEstatusClave, // Esto detonará el cambio de color
                     estatus_nombre: nuevoEstatusNombre,
                     estatus_visual: nuevoEstatusVisual
@@ -556,6 +559,7 @@ useEffect(() => {
     setInicioTraslado(formatearParaInputTime(servicio.h_inicio));
     setLlegadaDestino(formatearParaInputTime(servicio.h_destino));
     setFinServicio(formatearParaInputTime(servicio.h_final));
+    setLlegadaBase(formatearParaInputTime(servicio.h_llegada));
     setNota(servicio.paciente_nota || '');
 
     setModForm({
@@ -611,6 +615,7 @@ useEffect(() => {
                   <TimeInput label="Inicio de traslado" value={inicioTraslado || ""} onChange={setInicioTraslado} onClick={() => establecerHoraActual(setInicioTraslado)} darkMode={darkMode} showClear={false}/>
                   <TimeInput label="Llegada a destino" value={llegadaDestino || ""} onChange={setLlegadaDestino} onClick={() => establecerHoraActual(setLlegadaDestino)} darkMode={darkMode} showClear={false}/>
                   <TimeInput label="Fin de servicio" value={finServicio || ""} onChange={setFinServicio} onClick={() => establecerHoraActual(setFinServicio)} darkMode={darkMode} showClear={false}/>
+                  <TimeInput label="Llegada a la base" value={llegadaBase || ""} onChange={setLlegadaBase} onClick={() => establecerHoraActual(setLlegadaBase)} darkMode={darkMode} showClear={false}/>  
                 </div>
               </section>
 
@@ -872,6 +877,7 @@ useEffect(() => {
                   <TimeInput label="Inicio" value={inicioTraslado} onChange={setInicioTraslado} onClick={() => establecerHoraActual(setInicioTraslado)} darkMode={darkMode} showClear={true}/>
                   <TimeInput label="Destino" value={llegadaDestino} onChange={setLlegadaDestino} onClick={() => establecerHoraActual(setLlegadaDestino)} darkMode={darkMode} showClear={true}/>
                   <TimeInput label="Fin" value={finServicio} onChange={setFinServicio} onClick={() => establecerHoraActual(setFinServicio)} darkMode={darkMode} showClear={true}/>
+                    <TimeInput label="Base" value={llegadaBase || ""} onChange={setLlegadaBase} onClick={() => establecerHoraActual(setLlegadaBase)} darkMode={darkMode} showClear={false}/>
                 </div>
               </section>
 

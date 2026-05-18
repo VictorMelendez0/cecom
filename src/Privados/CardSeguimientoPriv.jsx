@@ -1,7 +1,7 @@
 import React from 'react';
 import { Ambulance, User } from 'lucide-react';
 
-const CardSeguimiento = ({ servicio, onPress, darkMode }) => {
+const CardSeguimientoPriv = ({ servicio, onPress, darkMode }) => {
   const estatus = servicio.estatus_clave;
 
   // Definición de estilos por estado
@@ -83,18 +83,18 @@ const CardSeguimiento = ({ servicio, onPress, darkMode }) => {
             ● {estatus}
           </div>
           <span className={`text-base sm:text-lg font-black tracking-tight truncate opacity-90 ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-            #{servicio.folio_imss}
+            #{servicio.folio_privado}
           </span>
         </div>
 
         {/* El resto del componente permanece igual... */}
         <div className="flex items-center gap-2 mb-3">
-          <p className="text-[13px] font-bold truncate flex-1 leading-tight" title={servicio.hospital_origen}>
-              {servicio.hospital_origen}
+          <p className="text-[13px] font-bold truncate flex-1 leading-tight" title={servicio.origen}>
+              {servicio.origen}
           </p>
           <span className="text-gray-400 text-xs font-black">→</span>
-          <p className="text-[13px] font-bold truncate flex-1 leading-tight" title={servicio.hospital_destino}>
-              {servicio.hospital_destino}
+          <p className="text-[13px] font-bold truncate flex-1 leading-tight" title={servicio.destino}>
+              {servicio.destino}
           </p>
         </div>
 
@@ -150,4 +150,4 @@ const TimeItem = ({ label, time, darkMode }) => (
   </div>
 );
 
-export default CardSeguimiento;
+export default CardSeguimientoPriv;

@@ -37,6 +37,10 @@ const NavItem = ({ icon: Icon, label, color, darkMode, onClick }) => {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const savedTheme = localStorage.getItem('app-theme');
+    if (savedTheme === 'dark') return true;
+    if (savedTheme === 'light') return false;
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
   
@@ -46,7 +50,11 @@ const Dashboard = () => {
   const[cargando, setCargando] = useState(true);
   const[sidebarOpen, setSidebarOpen] = useState(false);
   const [serviciosHoy, setServiciosHoy] = useState([]);
-  const toggleTheme = () => setDarkMode(!darkMode);
+  const setTheme = (isDark) => {
+    localStorage.setItem('app-theme', isDark ? 'dark' : 'light');
+    setDarkMode(isDark);
+  };
+  const toggleTheme = () => setTheme(!darkMode);
   const handleNavigation = (ruta) => {
     navigate(ruta); 
     setSidebarOpen(false);
@@ -80,10 +88,6 @@ const Dashboard = () => {
     };
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');    
-    const handleChange = (e) => setDarkMode(e.matches);
-    mediaQuery.addEventListener('change', handleChange);
-
     const timer = setInterval(() => {
       setHora(new Date().toLocaleTimeString());
     }, 1000);
@@ -111,7 +115,6 @@ const Dashboard = () => {
       });    
 
     return () => {
-      mediaQuery.removeEventListener('change', handleChange);
       clearInterval(timer);
     };
   }, []);
