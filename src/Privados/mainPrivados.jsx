@@ -11,6 +11,7 @@ import AsignarUnidad from '../FoliosImss/AsignarUnidad';
 import Seguimiento from '../FoliosImss/Seguimiento';
 import CargarCotizaciones from './CargarCotcizaciones';
 import AsignarUnidadPriv from './AsignarUnidadPriv';
+import SeguimientoPriv from './SeguimientoPriv';
 
 const ESTADOS_MAPA = {
   'EN_SERVICIO': { label: 'Activo', color: 'text-green-400 dark:text-emerald-500', bg: 'bg-emerald-500', pulse: 'animate-pulse' },
@@ -100,12 +101,14 @@ const MainPrivados = () => {
   const [observaciones, setObservaciones] = useState('');
   const [Cancelacion, setCancelacion] = useState('');
   const [cotisacionTotal, setCotisacionTotal] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEstadoOpen, setIsEstadoOpen] = useState(false);
+  const [cotSeleccionada, setCotSeleccionada] = useState('');
+
 
   const [fechaNacimiento, setFechaNacimiento] = useState('');
   const [edadPaciente, setEdadPaciente] = useState('');
-  const [listaServicios, setListaServicios] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEstadoOpen, setIsEstadoOpen] = useState(false);
+  const [listaServicios, setListaServicios] = useState([]); 
   const [prioridadSelec, setPrioridadSelect] = useState('');
   const [nombre, setNombre] = useState('');
   const [numeross, setNumeroSs] =useState('');
@@ -126,13 +129,13 @@ const MainPrivados = () => {
   const [tipoModalAbierto, setTipoModalAbierto] = useState(null);
 
   const fechaHoy = new Date().toLocaleDateString('es-MX', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric'
-  });
-  const handleNavigation = (ruta) => {
-    navigate(ruta); 
-    setSidebarOpen(false);
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+    });
+    const handleNavigation = (ruta) => {
+        navigate(ruta); 
+        setSidebarOpen(false);
   };
 
   const abrirModalSeguimiento = (servicio, tipo) => {
@@ -141,7 +144,7 @@ const MainPrivados = () => {
   };
 
   const usuarioLogueado = localStorage.getItem('user_name') || 'Usuario Invitado';
-  const IdUsuario = localStorage.getItem('user_id') || 'Usuario Invitado'
+  const IdUsuario = localStorage.getItem('user_id') || 'Usuario Invitado';
 
   const formatearMoneda = (valor) => {
         if (valor === null || valor === undefined || valor === '') return '';
@@ -201,7 +204,7 @@ const MainPrivados = () => {
         setContactoSolicitante('');
         setDiagnostico('');
         setTraslado('');
-        setServicioSeleccionado('');
+        setTipoServicio('');
         setPrecioBase('');
         setTiempoEspera('');
         setCostoHora('');
@@ -282,6 +285,7 @@ const MainPrivados = () => {
 
             alert("Cotización guardada y formulario limpio.");
             limpiarFormulario();
+            setCotSeleccionada('');
             setTimeout(() => {
             refrescarDatos();
         }, 500);
@@ -294,6 +298,12 @@ const MainPrivados = () => {
    }
 
    const CargarRegistro = (cotizacion) => {
+        const Foliocot=(cotizacion.folio_cotizacion || '');
+
+        console.log("Se ha cargado el Folio: ", Foliocot);
+
+        setCotSeleccionada(Foliocot);
+
         // Seteamos los estados individuales con los datos de la cotización
         setSolicitanteNombre(cotizacion.solicitante_nombre || '');
         setContactoSolicitante(cotizacion.contacto_numero || '');
@@ -1252,7 +1262,11 @@ const MainPrivados = () => {
 
                                     
                                     <button 
-                                        onClick={() => setIsEstadoOpen(true)} 
+                                        onClick={() =>{ 
+                                            if (!cotSeleccionada){
+                                                setCotSeleccionada(folioSugerido);
+                                            }
+                                            setIsEstadoOpen(true)}} 
                                         className={`ml-auto sm:flex-none px-8 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wide transition-all duration-300 cursor-pointer border
                                             ${darkMode 
                                                 ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400 hover:bg-emerald-800/40' 
@@ -1381,11 +1395,30 @@ const MainPrivados = () => {
             isOpen={isEstadoOpen}
             onClose={() => setIsEstadoOpen(false)} 
             darkMode={darkMode}
-            servicio={servicioSeleccionado}
+            listaCotizaciones={db?.privadosCot || []}
             listaAsignaciones={db?.asignaciones || []}
+            listaPrivados={db?.servicios_privados || []}
+            folio={cotSeleccionada}
+            idServicio={IdServicio}
             listaPersonal={db?.personal || []}
             listaExtra={db?.extra || []}
+            refrescar={refrescarDatos}
+            limpiar={limpiarFormulario}
         />
+        {tipoModalAbierto === 'MODAL_TIEMPOS' && (
+                <SeguimientoPriv
+                    onClose={() => setIsEstadoOpen(false)} 
+                    isOpen={true}
+                    darkMode={darkMode}
+                    servicio={servicioSeleccionado}
+                    onSave={handleSaveSeguimiento}
+                    listaAsignaciones={db?.asignaciones || []}
+                    listaPersonal={db?.personal || []}
+                    listaExtra={db?.extra || []}
+                    listaHospitales={db?.hospitales_cat || []}
+                    onClose={() => setTipoModalAbierto(null)}
+                />
+        )};
     </div>
   );
 };

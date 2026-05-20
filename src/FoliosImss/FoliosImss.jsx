@@ -1229,7 +1229,6 @@ const FoliosImss = () => {
                     listaExtra={db?.extra || []}
                     listaHospitales={db?.hospitales_cat || []}
                     onClose={() => setTipoModalAbierto(null)}
-                    
                 />
             )}
 

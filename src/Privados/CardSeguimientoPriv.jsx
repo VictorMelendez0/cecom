@@ -6,17 +6,12 @@ const CardSeguimientoPriv = ({ servicio, onPress, darkMode }) => {
 
   // Definición de estilos por estado
   const estilosEstatus = {
-    'NUEVO': {
-      borde: 'border-l-red-600',
-      texto: darkMode ? 'text-red-400' : 'text-red-700',
-      fondo: darkMode ? 'bg-red-900/30' : 'bg-red-50'
-    },
     'ASIGNADO': {
       borde: 'border-l-yellow-500',
       texto: darkMode ? 'text-yellow-400' : 'text-yellow-700',
       fondo: darkMode ? 'bg-yellow-900/30' : 'bg-yellow-50'
     },
-    'EN_SERVICIO': {
+    'EN_PROCESO': {
       borde: 'border-l-blue-500',
       texto: darkMode ? 'text-blue-400' : 'text-blue-700',
       fondo: darkMode ? 'bg-blue-900/30' : 'bg-blue-50'
